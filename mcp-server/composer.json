@@ -1,0 +1,20 @@
+{
+    "name": "demo/mcp-server",
+    "description": "Read-only MCP server over HTTP (Swoole) exposing demo user data from MySQL",
+    "type": "project",
+    "require": {
+        "php": ">=8.3",
+        "ext-pdo": "*",
+        "ext-swoole": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": { "Mcp\\": "src/" }
+    },
+    "autoload-dev": {
+        "psr-4": { "Mcp\\Tests\\": "tests/" }
+    },
+    "config": { "sort-packages": true }
+}

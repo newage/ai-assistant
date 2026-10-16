@@ -1,0 +1,7 @@
+### POST test chat message
+POST http://localhost:8000/chat
+Content-Type: application/json
+
+{"messages":[{"role":"user","content":"Show profile for user olena1@example.com"}]}
+
+###

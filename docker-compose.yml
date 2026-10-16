@@ -1,0 +1,73 @@
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-demo}
+      MYSQL_READONLY_USER: ${MYSQL_READONLY_USER:-readonly}
+      MYSQL_READONLY_PASSWORD: ${MYSQL_READONLY_PASSWORD:?set MYSQL_READONLY_PASSWORD in .env}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # TCP ping: the temporary init server only listens on a socket, so this passes only when MySQL is really ready
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  mcp-server:
+    build: ./mcp-server
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_NAME: ${MYSQL_DATABASE:-demo}
+      DB_USER: ${MYSQL_READONLY_USER:-readonly}
+      DB_PASSWORD: ${MYSQL_READONLY_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9501/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  vector-db:
+    image: qdrant/qdrant:latest
+    restart: unless-stopped
+    volumes:
+      - qdrant-data:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "bash", "-c", ":> /dev/tcp/127.0.0.1/6333"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  ai-service:
+    build: ./ai-service
+    restart: unless-stopped
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?set ANTHROPIC_API_KEY in .env}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-5-5}
+      QDRANT_URL: http://vector-db:6333
+      MCP_URL: http://mcp-server:9501/mcp
+    ports:
+      - "${AI_SERVICE_PORT:-8000}:8000"
+    depends_on:
+      vector-db:
+        condition: service_healthy
+      mcp-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  mysql-data:
+  qdrant-data:
