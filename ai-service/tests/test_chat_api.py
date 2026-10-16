@@ -63,3 +63,29 @@ async def test_chat_claude_failure_is_5xx(client):
     _use(FakeAssistant(error=err))
     r = await client.post("/chat", json={"messages": [{"role": "user", "content": "x"}]})
     assert r.status_code == 502 and "reply" not in r.json()
+
+
+async def test_request_id_echoed(client):
+    _use(FakeAssistant())
+    r = await client.post("/chat", json={"messages": [{"role": "user", "content": "x"}]}, headers={"X-Request-ID": "abc123"})
+    assert r.headers["x-request-id"] == "abc123"
+
+
+async def test_request_id_generated_when_missing_or_malformed(client):
+    _use(FakeAssistant())
+    body = {"messages": [{"role": "user", "content": "x"}]}
+    generated = (await client.post("/chat", json=body)).headers["x-request-id"]
+    assert len(generated) == 32
+    bad = (await client.post("/chat", json=body, headers={"X-Request-ID": "has space"})).headers["x-request-id"]
+    assert bad != "has space" and len(bad) == 32
+
+
+async def test_request_id_on_error_responses(client):
+    _use(FakeAssistant())
+    r = await client.post("/chat", json={"messages": []}, headers={"X-Request-ID": "e422"})
+    assert r.status_code == 422 and r.headers["x-request-id"] == "e422"
+    err = APIConnectionError(request=httpx.Request("POST", "https://api.anthropic.com"))
+    _use(FakeAssistant(error=err))
+    r = await client.post("/chat", json={"messages": [{"role": "user", "content": "x"}]}, headers={"X-Request-ID": "e502"})
+    assert r.status_code == 502 and r.headers["x-request-id"] == "e502"
+

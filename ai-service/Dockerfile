@@ -16,6 +16,7 @@ RUN python -c "from app.embeddings_model import MODEL_NAME; from fastembed impor
 COPY app ./app
 COPY scripts ./scripts
 COPY data ./data
+COPY log_config.json ./
 
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--log-config", "log_config.json"]

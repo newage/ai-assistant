@@ -23,3 +23,17 @@ def test_effort_unknown_value_fails_fast(monkeypatch):
     monkeypatch.setenv("CLAUDE_EFFORT", "turbo")
     with pytest.raises(ValidationError, match="claude_effort"):
         Settings(_env_file=None, anthropic_api_key="x")
+
+
+def test_logging_identity_defaults(monkeypatch):
+    monkeypatch.delenv("LOG_ID", raising=False)
+    monkeypatch.delenv("ENVIRONMENT", raising=False)
+    s = Settings(_env_file=None, anthropic_api_key="x")
+    assert (s.log_id, s.environment) == ("dev", "local")
+
+
+def test_logging_identity_from_env(monkeypatch):
+    monkeypatch.setenv("LOG_ID", "vadym")
+    monkeypatch.setenv("ENVIRONMENT", "prod")
+    s = Settings(_env_file=None, anthropic_api_key="x")
+    assert (s.log_id, s.environment) == ("vadym", "prod")

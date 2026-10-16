@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Mcp;
 
+use Mcp\Log\RequestLogger;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+
 /**
  * Minimal MCP (streamable HTTP, JSON responses only) JSON-RPC handler:
  * initialize, notifications/initialized, ping, tools/list, tools/call.
@@ -17,7 +21,7 @@ final class McpHandler
     }
 
     /** @return array<string, mixed>|null null means "no response body" (notification) */
-    public function handle(mixed $message): ?array
+    public function handle(mixed $message, ?LoggerInterface $log = null): ?array
     {
         if (!is_array($message) || ($message['jsonrpc'] ?? null) !== '2.0' || !isset($message['method'])) {
             return self::failure($message['id'] ?? null, -32600, 'Invalid Request');
@@ -39,13 +43,13 @@ final class McpHandler
             ]),
             'ping' => self::success($id, new \stdClass()),
             'tools/list' => self::success($id, ['tools' => $this->tools->definitions()]),
-            'tools/call' => $this->callTool($id, $params),
+            'tools/call' => $this->callTool($id, $params, $log ?? new NullLogger()),
             default => self::failure($id, -32601, 'Method not found'),
         };
     }
 
     /** @param array<string, mixed> $params */
-    private function callTool(mixed $id, array $params): array
+    private function callTool(mixed $id, array $params, LoggerInterface $log): array
     {
         $name = $params['name'] ?? null;
         $arguments = is_array($params['arguments'] ?? null) ? $params['arguments'] : [];
@@ -54,16 +58,27 @@ final class McpHandler
             return self::failure($id, -32602, 'Invalid params: name is required');
         }
 
+        $started = hrtime(true);
         try {
             $result = $this->tools->call($name, $arguments);
         } catch (\PDOException $e) {
             throw $e; // let the transport drop the connection and report the DB as unavailable
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $log->error('tool call failed', ['tool' => $name, 'exception' => $e]);
+
             return self::success($id, [
                 'content' => [['type' => 'text', 'text' => 'Internal error while reading user data.']],
                 'isError' => true,
             ]);
         }
+
+        $durationMs = round((hrtime(true) - $started) / 1e6, 1);
+        $log->info('tool call', ['tool' => $name, 'status' => ($result['isError'] ?? false) ? 'error' : 'ok', 'duration_ms' => $durationMs]);
+        $log->debug('tool call content', [
+            'tool' => $name,
+            'arguments' => RequestLogger::truncate($arguments),
+            'result' => RequestLogger::truncate($result['content'][0]['text'] ?? ''),
+        ]);
 
         return $result === null
             ? self::failure($id, -32602, "Unknown tool: $name")

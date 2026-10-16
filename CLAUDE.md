@@ -18,6 +18,14 @@ chat bot ──HTTP──▶ ai-service (FastAPI + LangChain agent, Claude API)
 - `docs/faq-seeding.md` — how to load FAQ entries into Qdrant (collection starts empty).
 - `openspec/` — specs and changes; `.agents/decisions/` holds the decision log.
 
+## Logging
+
+Both services write one JSON object per line to stdout; Docker (`json-file`, 1 MB × 2 files) rotates them. Fields: `priority`, `service`, `short_message`, `x-request-id`, `extra`, `timestamp`, `log_id`, `environment` (`LOG_ID` and `ENVIRONMENT` from `.env`).
+
+- `ai-service` takes `X-Request-ID` (`[A-Za-z0-9._-]{1,64}`) or generates one, returns it in the response and forwards it to `mcp-server`, which puts it into its own lines (`-` if absent).
+- Debug is on when the request has `X-Debugging: true`, or without it when `ENVIRONMENT` is not `prod`. info logs metadata only; debug adds user messages, tool arguments and results (truncated to ~500 chars).
+- Swoole's own system messages stay plain text. Read logs with `docker compose logs ai-service mcp-server`; follow one request with `grep <request-id>`.
+
 There is no access control: any user's data can be fetched by ID or email. This is acceptable only because the data is fake.
 
 ## Commands

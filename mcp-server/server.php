@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Mcp\Log\RequestLogger;
 use Mcp\McpHandler;
 use Mcp\Tools;
 use Mcp\UserRepository;
@@ -60,8 +61,12 @@ $server->on('request', static function (Request $req, Response $res) use (&$hand
         return;
     }
 
+    $log = RequestLogger::create($req->header['x-request-id'] ?? null, $req->header['x-debugging'] ?? null);
+    $started = hrtime(true);
+
     $message = json_decode($req->rawContent() ?: '', true);
     if ($message === null) {
+        $log->warning('invalid JSON-RPC body');
         $json($res, 400, ['jsonrpc' => '2.0', 'id' => null, 'error' => ['code' => -32700, 'message' => 'Parse error']]);
         return;
     }
@@ -73,17 +78,20 @@ $server->on('request', static function (Request $req, Response $res) use (&$hand
         $isBatch = array_is_list($message) && $message !== [];
         $responses = [];
         foreach ($isBatch ? $message : [$message] as $item) {
-            $out = $handler->handle($item);
+            $out = $handler->handle($item, $log);
             if ($out !== null) {
                 $responses[] = $out;
             }
         }
-    } catch (\PDOException) {
+    } catch (\PDOException $e) {
+        $log->critical('database unavailable', ['exception' => $e]);
         $handler = null;
         $pdo = null;
         $json($res, 503, ['jsonrpc' => '2.0', 'id' => null, 'error' => ['code' => -32000, 'message' => 'Database unavailable']]);
         return;
     }
+
+    $log->info('POST /mcp', ['status' => $responses === [] ? 202 : 200, 'duration_ms' => round((hrtime(true) - $started) / 1e6, 1)]);
 
     if ($responses === []) {
         $res->status(202);

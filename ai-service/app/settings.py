@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     faq_top_k: int = 4
     mcp_url: str = "http://mcp-server:9501/mcp"
     max_messages: int = 50
+    log_id: str = "dev"
+    environment: str = "local"
 
     @field_validator("claude_effort", mode="before")
     @classmethod

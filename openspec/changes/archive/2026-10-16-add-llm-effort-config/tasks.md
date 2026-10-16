@@ -12,4 +12,4 @@
 
 ## 3. Integration check
 
-- [ ] 3.1 Start the stack with `docker compose up -d --build`, send `POST /chat` with a greeting and with an FAQ/user-lookup question, and confirm replies come back (HTTP 200) on Haiku 5.5 at `low`; then start with `CLAUDE_EFFORT=turbo` and confirm `ai-service` exits with the configuration error.
+- [x] 3.1 Start the stack with `docker compose up -d --build`, send `POST /chat` with a greeting and with an FAQ/user-lookup question, and confirm replies come back (HTTP 200) on Haiku 5.5 at `low`; then start with `CLAUDE_EFFORT=turbo` and confirm `ai-service` exits with the configuration error.

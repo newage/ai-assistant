@@ -1,3 +1,9 @@
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "1m"
+    max-file: "2"
+
 services:
   mysql:
     image: mysql:8.4
@@ -21,11 +27,14 @@ services:
   mcp-server:
     build: ./mcp-server
     restart: unless-stopped
+    logging: *logging
     environment:
       DB_HOST: mysql
       DB_NAME: ${MYSQL_DATABASE:-demo}
       DB_USER: ${MYSQL_READONLY_USER:-readonly}
       DB_PASSWORD: ${MYSQL_READONLY_PASSWORD}
+      LOG_ID: ${LOG_ID:-dev}
+      ENVIRONMENT: ${ENVIRONMENT:-local}
     depends_on:
       mysql:
         condition: service_healthy
@@ -49,12 +58,15 @@ services:
   ai-service:
     build: ./ai-service
     restart: unless-stopped
+    logging: *logging
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?set ANTHROPIC_API_KEY in .env}
       CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-haiku-5-5}
       CLAUDE_EFFORT: ${CLAUDE_EFFORT-low}
       QDRANT_URL: http://vector-db:6333
       MCP_URL: http://mcp-server:9501/mcp
+      LOG_ID: ${LOG_ID:-dev}
+      ENVIRONMENT: ${ENVIRONMENT:-local}
     ports:
       - "${AI_SERVICE_PORT:-8000}:8000"
     depends_on:
