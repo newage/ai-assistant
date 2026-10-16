@@ -51,7 +51,8 @@ services:
     restart: unless-stopped
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?set ANTHROPIC_API_KEY in .env}
-      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-5-5}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-haiku-5-5}
+      CLAUDE_EFFORT: ${CLAUDE_EFFORT-low}
       QDRANT_URL: http://vector-db:6333
       MCP_URL: http://mcp-server:9501/mcp
     ports:

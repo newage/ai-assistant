@@ -26,7 +26,9 @@ log = logging.getLogger(__name__)
 class Assistant:
     def __init__(self, settings: Settings, model=None, extra_tools=None, mcp: McpTools | None = None):
         self._settings = settings
-        self._model = model or ChatAnthropic(model=settings.claude_model, api_key=settings.anthropic_api_key)
+        self._model = model or ChatAnthropic(
+            model=settings.claude_model, api_key=settings.anthropic_api_key, effort=settings.claude_effort
+        )
         self._static_tools = [make_search_faq(settings), *(extra_tools or [])]
         self._mcp = mcp if mcp is not None else McpTools(settings.mcp_url)
 

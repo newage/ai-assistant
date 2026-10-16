@@ -18,6 +18,8 @@ curl -s localhost:8000/chat -H 'Content-Type: application/json' \
 
 `POST /chat` takes the full conversation (`messages: [{role: user|assistant, content}]`, last one from the user) and returns `{"reply": "..."}`. The service is stateless, so the bot resends the history each time. A Claude API failure gives HTTP 502.
 
+Model settings in `.env`: `CLAUDE_MODEL` (default `claude-haiku-5-5`) and `CLAUDE_EFFORT` (default `low`; allowed `low|medium|high|xhigh|max`, empty = the model's API default). An invalid value stops `ai-service` at startup; a level the chosen model does not support gives HTTP 502. If you switch to another model (e.g. Sonnet), set `CLAUDE_EFFORT` explicitly.
+
 The first image build downloads the ~2.2 GB embedding model; later builds and starts do not.
 
 ## FAQ data

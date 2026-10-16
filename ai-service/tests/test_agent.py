@@ -72,3 +72,9 @@ async def test_history_is_passed_to_model():
         ]
     )
     assert seen["n"] == 4  # system prompt + 3 history messages
+
+
+def test_effort_is_passed_to_claude_model():
+    s = Settings(_env_file=None, anthropic_api_key="x", claude_effort="low")
+    assert Assistant(s, mcp=NoMcp())._model.effort == "low"
+    assert Assistant(_settings(), mcp=NoMcp())._model.effort is None
