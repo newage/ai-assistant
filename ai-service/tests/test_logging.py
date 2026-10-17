@@ -164,7 +164,7 @@ async def test_mcp_call_carries_request_headers(monkeypatch):
     seen = {}
 
     class FakeClient:
-        def __init__(self, config):
+        def __init__(self, config, **kwargs):
             seen.update(config["users"]["headers"])
 
         async def get_tools(self):

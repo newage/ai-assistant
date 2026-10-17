@@ -48,6 +48,8 @@ async def test_chat_ok(client):
         {"messages": []},
         {"messages": [{"role": "bot", "content": "x"}]},
         {"messages": [{"role": "user", "content": "x"}, {"role": "assistant", "content": "y"}]},
+        {"messages": [{"role": "user", "content": "x" * 501}]},
+        {"messages": [{"role": "user" if i % 2 == 0 else "assistant", "content": "x"} for i in range(5)]},
         {},
     ],
 )
@@ -56,6 +58,13 @@ async def test_chat_invalid_is_422_and_no_llm_call(client, body):
     _use(fake)
     r = await client.post("/chat", json=body)
     assert r.status_code == 422 and fake.received is None
+
+
+async def test_chat_boundary_limits_accepted(client):
+    _use(FakeAssistant())
+    msgs = [{"role": "user" if i % 2 == 0 else "assistant", "content": "x" * 500} for i in range(3)]
+    r = await client.post("/chat", json={"messages": msgs + [{"role": "user", "content": "x" * 500}]})
+    assert r.status_code == 200
 
 
 async def test_chat_claude_failure_is_5xx(client):
@@ -89,3 +98,20 @@ async def test_request_id_on_error_responses(client):
     r = await client.post("/chat", json={"messages": [{"role": "user", "content": "x"}]}, headers={"X-Request-ID": "e502"})
     assert r.status_code == 502 and r.headers["x-request-id"] == "e502"
 
+
+
+async def test_off_topic_request_gets_refusal_through_the_real_assistant(client):
+    from langchain_core.messages import AIMessage
+
+    from app.agent import REFUSAL, Assistant
+    from app.settings import Settings
+    from tests.conftest import ScriptedModel
+
+    class NoMcp:
+        async def load(self):
+            return []
+
+    model = ScriptedModel(script=[AIMessage(content="Jesienne liście...")])
+    _use(Assistant(Settings(_env_file=None, anthropic_api_key="x"), model=model, mcp=NoMcp()))
+    r = await client.post("/chat", json={"messages": [{"role": "user", "content": "napisz piosenkę"}]})
+    assert r.status_code == 200 and r.json() == {"reply": REFUSAL}

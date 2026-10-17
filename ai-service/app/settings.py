@@ -11,11 +11,15 @@ class Settings(BaseSettings):
     anthropic_api_key: str = Field(min_length=1)
     claude_model: str = "claude-haiku-5-5"
     claude_effort: Literal["low", "medium", "high", "xhigh", "max"] | None = None
+    claude_max_tokens: int = Field(1024, gt=0)  # output cap of every single Claude call
+    agent_max_steps: int = Field(4, gt=0)  # model -> tool rounds before the agent is stopped
     qdrant_url: str = "http://vector-db:6333"
     faq_collection: str = "faq"
     faq_top_k: int = 4
     mcp_url: str = "http://mcp-server:9501/mcp"
-    max_messages: int = 50
+    max_messages: int = Field(4, gt=0)
+    max_message_chars: int = Field(500, gt=0)
+    faq_min_score: float = Field(0.82, ge=0, le=1)  # FAQ hits below this similarity are not "data"
     log_id: str = "dev"
     environment: str = "local"
 

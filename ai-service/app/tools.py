@@ -1,8 +1,9 @@
 """Agent tools. Failures are returned as text so the LLM can explain them honestly."""
 import logging
 import time
+from contextvars import ContextVar
 
-from langchain_core.tools import BaseTool, StructuredTool, tool
+from langchain_core.tools import BaseTool, StructuredTool, ToolException, tool
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from qdrant_client import QdrantClient
 
@@ -15,6 +16,22 @@ log = logging.getLogger(__name__)
 NO_FAQ = "No relevant FAQ entries found."
 FAQ_UNAVAILABLE = "The FAQ search is temporarily unavailable."
 MCP_UNAVAILABLE = "The user data service is temporarily unavailable, so this information could not be retrieved."
+
+
+class DataTracker:
+    """Per-request record of whether any tool returned real data (see `Assistant.reply`)."""
+
+    def __init__(self) -> None:
+        self.found = False
+
+
+data_tracker_var: ContextVar[DataTracker | None] = ContextVar("data_tracker", default=None)
+
+
+def mark_data() -> None:
+    tracker = data_tracker_var.get()
+    if tracker is not None:
+        tracker.found = True
 
 
 def _log_tool_call(name: str, status: str, started: float, args, result) -> None:
@@ -36,6 +53,9 @@ def make_search_faq(settings: Settings, client: QdrantClient | None = None) -> B
             log.exception("search_faq failed")
             _log_tool_call("search_faq", "error", started, {"query": query}, FAQ_UNAVAILABLE)
             return FAQ_UNAVAILABLE
+        hits = [h for h in hits if h["score"] >= settings.faq_min_score]
+        if hits:
+            mark_data()
         result = NO_FAQ if not hits else "\n\n".join(f"Q: {h['question']}\nA: {h['answer']}" for h in hits)
         _log_tool_call("search_faq", "ok", started, {"query": query}, result)
         return result
@@ -50,10 +70,14 @@ def _guard_mcp_tool(t: BaseTool) -> BaseTool:
         started = time.perf_counter()
         try:
             result = await t.ainvoke(kwargs)
+        except ToolException as exc:  # the tool ran but reported an error, e.g. "User not found." - not data
+            _log_tool_call(t.name, "error", started, kwargs, str(exc))
+            return str(exc)
         except Exception:
             log.exception("MCP tool %s failed", t.name)
             _log_tool_call(t.name, "error", started, kwargs, MCP_UNAVAILABLE)
             return MCP_UNAVAILABLE
+        mark_data()
         _log_tool_call(t.name, "ok", started, kwargs, result)
         return result
 
@@ -74,7 +98,10 @@ class McpTools:
             "X-Request-ID": request_id or request_id_var.get(),
             "X-Debugging": "true" if (debug_requested_var.get() if debug is None else debug) else "false",
         }
-        client = MultiServerMCPClient({"users": {"url": self._url, "transport": "streamable_http", "headers": headers}})
+        client = MultiServerMCPClient(
+            {"users": {"url": self._url, "transport": "streamable_http", "headers": headers}},
+            handle_tool_errors=False,  # isError results raise, so the guard can tell "not found" from data
+        )
         try:
             return [_guard_mcp_tool(t) for t in await client.get_tools()]
         except Exception:

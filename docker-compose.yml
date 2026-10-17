@@ -63,6 +63,11 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?set ANTHROPIC_API_KEY in .env}
       CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-haiku-5-5}
       CLAUDE_EFFORT: ${CLAUDE_EFFORT-low}
+      CLAUDE_MAX_TOKENS: ${CLAUDE_MAX_TOKENS:-1024}
+      AGENT_MAX_STEPS: ${AGENT_MAX_STEPS:-4}
+      MAX_MESSAGES: ${MAX_MESSAGES:-4}
+      MAX_MESSAGE_CHARS: ${MAX_MESSAGE_CHARS:-500}
+      FAQ_MIN_SCORE: ${FAQ_MIN_SCORE:-0.82}
       QDRANT_URL: http://vector-db:6333
       MCP_URL: http://mcp-server:9501/mcp
       LOG_ID: ${LOG_ID:-dev}

@@ -20,7 +20,7 @@ app = FastAPI(title="ai-service")
 
 class Message(BaseModel):
     role: Literal["user", "assistant"]
-    content: str = Field(min_length=1)
+    content: str = Field(min_length=1, max_length=settings.max_message_chars)
 
 
 class ChatRequest(BaseModel):
