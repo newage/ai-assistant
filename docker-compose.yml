@@ -15,7 +15,7 @@ services:
       MYSQL_READONLY_PASSWORD: ${MYSQL_READONLY_PASSWORD:?set MYSQL_READONLY_PASSWORD in .env}
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./db/init:/docker-entrypoint-initdb.d:ro
+      - ./data/db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       # TCP ping: the temporary init server only listens on a socket, so this passes only when MySQL is really ready
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]

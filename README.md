@@ -17,7 +17,7 @@ Following one chat request through the system:
 | 2. Orchestration | `ai-service` | Python, FastAPI, LangChain agent; the LLM decides which tools to call |
 | 3. Reasoning | Claude API | Anthropic Claude (`CLAUDE_MODEL`, default Haiku 5.5, with `CLAUDE_EFFORT`) |
 | 4a. FAQ search (RAG) | `search_faq` → `vector-db` | Local embeddings (`intfloat/multilingual-e5-large` via fastembed, baked into the image), Qdrant vector database |
-| 4b. User data | MCP client → `mcp-server` → `mysql` | MCP over HTTP (JSON-RPC at `POST /mcp`), PHP 8 + Swoole, MySQL with a `SELECT`-only account, fake seed data from `db/init/` |
+| 4b. User data | MCP client → `mcp-server` → `mysql` | MCP over HTTP (JSON-RPC at `POST /mcp`), PHP 8 + Swoole, MySQL with a `SELECT`-only account, fake seed data from `data/db/init/` |
 | 5. Response out | `ai-service` → chat bot | `{"reply": "..."}`; Claude API failure gives HTTP 502, tool failures are passed to the LLM as text |
 
 Cross-cutting:
@@ -48,11 +48,11 @@ The FAQ collection starts empty (chat still works). See [docs/faq-seeding.md](do
 
 ## Resetting data
 
-MySQL runs `db/init/*.sql` only on the first start with an empty volume, and Qdrant keeps its collection between restarts. To replace all data with new seeds (old data is dropped), remove both volumes and seed again:
+MySQL runs `data/db/init/*.sql` only on the first start with an empty volume, and Qdrant keeps its collection between restarts. To replace all data with new seeds (old data is dropped), remove both volumes and seed again:
 
 ```bash
 docker compose down -v                      # drops mysql-data and qdrant-data
-docker compose up -d --build --wait         # MySQL re-runs db/init/*.sql
+docker compose up -d --build --wait         # MySQL re-runs data/db/init/*.sql
 docker compose run --rm ai-service python -m scripts.seed_faq data/faq.sample.json
 ```
 

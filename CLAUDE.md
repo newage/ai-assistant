@@ -14,7 +14,7 @@ chat bot ──HTTP──▶ ai-service (FastAPI + LangChain agent, Claude API)
 
 - `ai-service/` — Python orchestrator. `POST /chat` takes `{messages:[{role,content}]}` and returns `{reply}` (stateless, no streaming). A LangChain agent lets the LLM decide whether to call `search_faq` and/or the MCP tools. Tool failures are returned to the LLM as text; only a Claude API failure becomes HTTP 502. The assistant answers only from tool data: if no tool returned data (FAQ hit with score ≥ `FAQ_MIN_SCORE`, or a real MCP result — "not found"/errors do not count), or the agent exceeds `AGENT_MAX_STEPS`, the model's text is replaced with a fixed Polish refusal (HTTP 200); this includes greetings. Limits (env): `CLAUDE_MAX_TOKENS` (1024 per Claude call), `AGENT_MAX_STEPS` (4 model→tool rounds), `MAX_MESSAGES` (4) and `MAX_MESSAGE_CHARS` (500) — violating the last two is HTTP 422. The model and its effort level come from `CLAUDE_MODEL` (default `claude-haiku-5-5`) and `CLAUDE_EFFORT` (default `low`; empty = API default; invalid value fails at startup). Embeddings are local (`intfloat/multilingual-e5-large` via fastembed, baked into the image; `query:`/`passage:` prefixes are mandatory).
 - `mcp-server/` — PHP/Swoole MCP server (hand-written JSON-RPC at `POST /mcp`) with tools `find_user_profile` and `get_user_activity`. Uses a `SELECT`-only MySQL account.
-- `db/init/` — MySQL schema, fake seed data and the read-only user (run by the MySQL image on first start).
+- `data/db/init/` — MySQL schema, fake seed data and the read-only user (run by the MySQL image on first start).
 - `docs/faq-seeding.md` — how to load FAQ entries into Qdrant (collection starts empty).
 - `openspec/` — specs and changes; `.agents/decisions/` holds the decision log.
 

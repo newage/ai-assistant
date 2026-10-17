@@ -10,7 +10,7 @@ use Mcp\UserRepository;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
-/** Runs against the seeded MySQL from db/init, using the read-only account. */
+/** Runs against the seeded MySQL from data/db/init, using the read-only account. */
 abstract class McpTestCase extends TestCase
 {
     protected McpHandler $handler;
