@@ -44,14 +44,14 @@ async def test_user_question_routes_to_mcp_tool():
     def find_user_profile(email: str) -> str:
         """Find user by email."""
         called.append(email)
-        return '{"id":1,"name":"Олена"}'
+        return '{"id":1,"name":"Helena"}'
 
     model = ScriptedModel(
-        script=[_tool_call("find_user_profile", {"email": "olena1@example.com"}), AIMessage(content="Це Олена.")]
+        script=[_tool_call("find_user_profile", {"email": "olena1@example.com"}), AIMessage(content="To Helena.")]
     )
     a = Assistant(_settings(), model=model, mcp=NoMcp([find_user_profile]))
-    reply = await a.reply([{"role": "user", "content": "хто olena1@example.com?"}])
-    assert reply == "Це Олена."
+    reply = await a.reply([{"role": "user", "content": "kto to olena1@example.com?"}])
+    assert reply == "To Helena."
     assert called == ["olena1@example.com"]
 
 

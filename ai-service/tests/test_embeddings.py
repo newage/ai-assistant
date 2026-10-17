@@ -2,7 +2,7 @@ from app import embeddings
 
 
 def test_real_model_returns_1024_dims():
-    assert len(embeddings.embed_query("як скинути пароль")) == 1024
+    assert len(embeddings.embed_query("jak zresetować hasło")) == 1024
     assert all(len(v) == 1024 for v in embeddings.embed_passages(["a", "b"]))
 
 

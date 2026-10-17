@@ -22,8 +22,8 @@ def test_seed_twice_has_no_duplicates(qdrant, collection):
 
 def test_search_finds_relevant_entry(qdrant, collection):
     faq.upsert_entries(qdrant, collection, SAMPLE)
-    hits = faq.search(qdrant, collection, "я забув пароль, що робити?", top_k=2)
-    assert hits[0]["question"] == "Як скинути пароль?"
+    hits = faq.search(qdrant, collection, "jaka jest cena usługi?", top_k=2)
+    assert hits[0]["question"] == "Ile to kosztuje?"
 
 
 def test_search_on_empty_collection(qdrant, collection):

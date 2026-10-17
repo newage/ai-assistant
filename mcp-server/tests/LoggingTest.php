@@ -139,6 +139,6 @@ final class LoggingTest extends McpTestCase
 
     public function testContentIsTruncated(): void
     {
-        $this->assertSame(501, mb_strlen(RequestLogger::truncate(str_repeat('я', 2000))));
+        $this->assertSame(501, mb_strlen(RequestLogger::truncate(str_repeat('ł', 2000))));
     }
 }

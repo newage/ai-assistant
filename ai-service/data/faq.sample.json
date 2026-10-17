@@ -1,17 +1,102 @@
 [
   {
-    "key": "sample-password-reset",
-    "question": "Як скинути пароль?",
-    "answer": "Відкрийте сторінку входу, натисніть «Забули пароль?» і вкажіть свій email — ми надішлемо посилання для скидання."
+    "key": "what-we-do",
+    "question": "Czym dokładnie się zajmujecie?",
+    "answer": "Znajdujemy miejsca, w których Państwa firma traci klientów i pieniądze (nieodebrane połączenia, zawieszone zapytania, klienci, którzy nie doszli do płatności), i konfigurujemy automatyzację, żeby tak się nie działo. Nie sprzedajemy „AI dla samego AI”: najpierw liczymy straty, potem proponujemy rozwiązanie."
   },
   {
-    "key": "sample-support-hours",
-    "question": "Коли працює підтримка?",
-    "answer": "Підтримка працює у будні з 9:00 до 18:00 за київським часом."
+    "key": "who-is-it-for",
+    "question": "Dla kogo to jest?",
+    "answer": "Dla małych firm, do których trafia stały strumień zapytań (telefony, zgłoszenia ze strony, wiadomości), a część z nich nie kończy się płatnością: serwisy, kliniki i gabinety, salony, warsztaty, usługi lokalne, mały e-commerce. Jeśli zapytań jest bardzo mało, efekt też będzie mały, i powiemy o tym uczciwie już na etapie diagnozy."
   },
   {
-    "key": "sample-invoice",
-    "question": "Де завантажити рахунок-фактуру?",
-    "answer": "Рахунки доступні в особистому кабінеті в розділі «Оплати» → «Документи»."
+    "key": "need-tech-knowledge",
+    "question": "Czy muszę znać się na AI albo technologii?",
+    "answer": "Nie. Potrzebujemy dostępu do Państwa danych i 30-60 minut Państwa czasu na uzgodnienia. Resztę robimy my."
+  },
+  {
+    "key": "who-works-on-project",
+    "question": "Kto konkretnie będzie pracował nad moim projektem?",
+    "answer": "Projekt prowadzi jedna osoba: analityk i twórca automatyzacji, który odpowiada za wynik od diagnozy do uruchomienia. Rozmawiają Państwo bezpośrednio z wykonawcą, bez menedżerów pośredniczących. Część analizy przyspieszamy za pomocą AI, ale wnioski i liczby sprawdzamy ręcznie."
+  },
+  {
+    "key": "pricing",
+    "question": "Ile to kosztuje?",
+    "answer": "W ogólnym zarysie: niewielka stała opłata za diagnozę i uruchomienie pilotażu oraz opcjonalny miesięczny abonament za wsparcie. Szczegóły w sekcji 'Etap 3'."
+  },
+  {
+    "key": "time-to-first-result",
+    "question": "Ile czasu trzeba czekać na pierwszy wynik?",
+    "answer": "Orientacyjnie 1,5-2 miesiące: zbieranie liczb 2-4 tygodnie, pilotaż 2-3 tygodnie, potem raport. Jeśli brakuje danych lub dostęp się opóźnia, terminy się wydłużają."
+  },
+  {
+    "key": "stage1-discovery-diagnosis",
+    "question": "Etap 1. Poznanie i diagnoza",
+    "answer": "Na tym etapie ustalamy, ile mają Państwo zapytań, ile z nich kończy się płatnością i gdzie dokładnie uciekają pieniądze. Podejście zależy od tego, czy prowadzą Państwo jakiekolwiek statystyki."
+  },
+  {
+    "key": "first-call",
+    "question": "Co dzieje się podczas pierwszej rozmowy?",
+    "answer": "Przez 30 minut rozmawiamy o tym, jak trafiają do Państwa klienci i co dzieje się z nimi dalej. Rozmowa jest bezpłatna. Na koniec mówimy, czy widzimy oczywisty problem i czy diagnoza ma sens."
+  },
+  {
+    "key": "what-to-prepare",
+    "question": "Co muszę przygotować?",
+    "answer": "Dostęp lub eksporty z Państwa źródeł: rejestr połączeń (z panelu operatora lub centrali telefonicznej), formularze ze strony, korespondencję w komunikatorach, płatności (faktury, wyciąg z banku lub terminala). Bez danych osobowych klientów! Nic nie szkodzi, jeśli czegoś brakuje w niektórych źródłach: pracujemy z tym, co jest."
+  },
+  {
+    "key": "no-manual-entry",
+    "question": "Czy moi menedżerowie nie będą musieli niczego wpisywać ręcznie?",
+    "answer": "Nie. Zbieramy dane automatycznie ze źródeł, które już istnieją. Menedżerowie nie muszą uzupełniać statusów ani dodatkowych arkuszy: taka praca zwykle psuje się jako pierwsza."
+  },
+  {
+    "key": "dont-know-inquiry-numbers",
+    "question": "Nie wiem, ile mam zapytań i ilu klientów tracę. Czy to problem?",
+    "answer": "Nie, to typowa sytuacja. Zaczniemy od zera."
+  },
+  {
+    "key": "diagnosis-duration",
+    "question": "Ile to potrwa?",
+    "answer": "2-4 tygodnie zbierania danych w tle. Państwo nie muszą prawie nic robić. Jeśli są historyczne wyciągi płatności i rejestry połączeń z kilku miesięcy, wykorzystujemy je i pierwsze liczby pojawiają się szybciej."
+  },
+  {
+    "key": "numbers-accuracy",
+    "question": "Na ile dokładne będą liczby? ",
+    "answer": "Przybliżone: klient mógł zapłacić z innego numeru lub gotówką, a część zapytań może nie być rejestrowana. Do oszacowania strat to wystarczy; najważniejsze, że porównujemy „przed” i „po” tą samą metodą."
+  },
+  {
+    "key": "diagnosis-deliverable",
+    "question": "Co otrzymam na koniec diagnozy? ",
+    "answer": "Krótki raport: ile zapytań, ile bez odpowiedzi, ile zakończonych płatnością, ile to pieniędzy miesięcznie (przedział), gdzie są największe straty i od czego radzimy zacząć."
+  },
+  {
+    "key": "client-data-privacy",
+    "question": "Nie chcę przekazywać danych moich klientów. Czy to naprawdę konieczne? Czy to nie jest niebezpieczne",
+    "answer": "Nie, dane osobowe klientów nie są potrzebne. Wszystkie dane, z którymi pracujemy, są anonimizowane."
+  },
+  {
+    "key": "have-crm-why-diagnosis",
+    "question": "Mam już CRM i arkusze. Po co mi diagnoza?",
+    "answer": "Posiadanie systemu nie oznacza, że są w nim poprawne dane i że proces działa. Często nie wszystkie zgłoszenia są wpisywane, statusy są nieaktualne, a po kontakcie klient utyka i nikt tego nie widzi. Sprawdzamy, czy liczbom można ufać, i szukamy, gdzie dokładnie proces się psuje."
+  },
+  {
+    "key": "crm-data-verification",
+    "question": "Jak sprawdzacie, czy dane w CRM są prawdziwe?",
+    "answer": "Porównujemy wpisy w CRM z płatnościami, rejestrem połączeń i formularzami. Jeśli klient zapłacił, a w CRM go nie ma, lub odwrotnie, widzimy to i uwzględniamy w ocenie."
+  },
+  {
+    "key": "find-stuck-requests",
+    "question": "Jak znajdujecie miejsca, w których zgłoszenia utykają?",
+    "answer": "Bierzemy próbkę 30-50 ostatnich zgłoszeń i śledzimy drogę każdego z nich: kiedy był kontakt, kiedy pierwsza odpowiedź, kiedy oferta, czym się skończyło. Dodatkowo liczymy odsetek zgłoszeń bez żadnej reakcji w ciągu 24-48 godzin oraz czas do wysłania oferty."
+  },
+  {
+    "key": "not-enough-staff",
+    "question": "A jeśli po prostu mamy za mało ludzi?",
+    "answer": "Wtedy automatyzacja pomoże tylko częściowo i powiemy o tym otwarcie. Taka odpowiedź też jest cenna: nie wydają Państwo pieniędzy na rozwiązanie niewłaściwego problemu."
+  },
+  {
+    "key": "diagnosis-final-report",
+    "question": "Co otrzymam na koniec diagnozy?",
+    "answer": "Taki sam krótki raport: liczby, straty w pieniądzach, główne wąskie gardło i rekomendację, od którego procesu zacząć pilotaż."
   }
 ]
