@@ -68,9 +68,9 @@ Client ─POST /chat─▶ validation (Pydantic)
 **Alternative:** take the last 4 — context is silently lost.
 
 ### Refusal language
-**Decision:** the fixed refusal text is in Polish.
-**Why:** developer's decision.
-**Alternative:** English or the language of the user's message — rejected by the developer; a single fixed text also keeps the check free of language detection.
+**Decision (revised):** three fixed refusal texts (uk, en, pl); the client passes `lang` on the message, default `en` (the FAQ is in English).
+**Why:** the bot knows the user's language, so no language detection or extra Claude call is needed.
+**Alternative:** a single Polish text (the original decision) — a Ukrainian or English user got a Polish refusal.
 
 ## Open Questions
 - The concrete FAQ similarity threshold — to be tuned on real questions during implementation (starting value from `faq.sample.json`).

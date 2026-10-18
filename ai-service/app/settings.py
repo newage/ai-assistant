@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     faq_top_k: int = 4
     max_messages: int = Field(4, gt=0)
     max_message_chars: int = Field(500, gt=0)
-    faq_min_score: float = Field(0.82, ge=0, le=1)  # FAQ hits below this similarity are not "data"
+    faq_min_score: float = Field(0.80, ge=0, le=1)  # FAQ hits below this similarity are not "data"
     log_id: str = "dev"
     environment: str = "local"
 

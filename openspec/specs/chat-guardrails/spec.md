@@ -25,11 +25,11 @@ The system SHALL read the token limit, the message length limit, the message cou
 - **THEN** the service fails at startup
 
 ### Requirement: Replies grounded in FAQ data
-The system SHALL call the LLM only when at least one FAQ hit counts as data and SHALL return the model's reply built from those hits; otherwise it SHALL reply with a fixed refusal text in Polish without calling the LLM.
+The system SHALL call the LLM only when at least one FAQ hit counts as data and SHALL return the model's reply built from those hits; otherwise it SHALL reply with a fixed refusal text without calling the LLM.
 
 #### Scenario: Off-topic request
 - **WHEN** the user asks "napisz piosenkę o jesieni" and no FAQ hit counts as data
-- **THEN** the system responds with HTTP 200 and the fixed Polish refusal as `reply`, without calling the LLM
+- **THEN** the system responds with HTTP 200 and the fixed refusal as `reply` in the language of the last message's `lang` (`uk`, `en` or `pl`; `en` when absent), without calling the LLM
 
 #### Scenario: FAQ question answered
 - **WHEN** the user asks a question for which the FAQ has a sufficiently similar entry

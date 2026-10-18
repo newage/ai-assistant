@@ -9,7 +9,7 @@ from app.settings import Settings
 from app.tools import search_faq
 
 SYSTEM_PROMPT = """You are a support assistant for a demo website. You answer ONLY from the FAQ entries below.
-Reply in the language of the user's message.
+Answer in the language of the user's message. You are Vadym's assistant, answer about him in third person.
 
 Rules:
 - Answer only from the FAQ entries; never use your own knowledge and never invent facts.
@@ -20,10 +20,22 @@ FAQ entries:
 {entries}"""
 
 # Returned instead of calling the model when no FAQ entry counts as data (off-topic, greetings, user-data questions).
-REFUSAL = (
-    "Przepraszam, nie mogę pomóc w tej sprawie. Odpowiadam na pytania dotyczące naszej usługi (FAQ) "
-    "oraz na pytania o dane użytkowników. Zadaj proszę pytanie z tego zakresu."
-)
+REFUSALS = {
+    "pl": (
+        "Przepraszam, nie mogę pomóc w tej sprawie. Odpowiadam na pytania dotyczące naszej usługi (FAQ) "
+        "oraz na pytania o dane użytkowników. Zadaj proszę pytanie z tego zakresu."
+    ),
+    "en": (
+        "Sorry, I can't help with that. I answer questions about our service (FAQ) "
+        "and questions about user data. Please ask a question within that scope."
+    ),
+    "uk": (
+        "Вибачте, я не можу допомогти з цим питанням. Я відповідаю на запитання про нашу послугу (FAQ) "
+        "та на запитання про дані користувачів. Будь ласка, поставте запитання з цієї теми."
+    ),
+}
+DEFAULT_LANG = "en"
+REFUSAL = REFUSALS[DEFAULT_LANG]
 
 log = logging.getLogger(__name__)
 
@@ -43,8 +55,8 @@ class Assistant:
         hits = await asyncio.to_thread(search_faq, self._settings, self._qdrant, messages[-1]["content"])
         if not hits:
             log.info("no FAQ data, refusing")
-            return REFUSAL
-        entries = "\n\n".join(f"Q: {h['question']}\nA: {h['answer']}" for h in hits)
+            return REFUSALS.get(messages[-1].get("lang"), REFUSAL)
+        entries = "\n\n".join(h["text"] for h in hits)
         result = await self._model.ainvoke(
             [SystemMessage(SYSTEM_PROMPT.format(entries=entries)), *(_to_message(m) for m in messages)]
         )

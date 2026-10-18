@@ -11,7 +11,7 @@ def _settings():
 
 
 def _hit(score):
-    return {"question": "Q?", "answer": "A.", "score": score}
+    return {"text": "A.", "score": score}
 
 
 def test_strong_hit_counts_and_weak_one_is_dropped(monkeypatch):

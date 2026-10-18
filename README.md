@@ -31,12 +31,12 @@ Cross-cutting:
 
 ```bash
 cp .env.example .env     # set ANTHROPIC_API_KEY and the MySQL passwords
-docker compose up -d --build --wait
+make up                  # docker/docker-compose.yml, reads .env
 curl -s localhost:8000/chat -H 'Content-Type: application/json' \
   -d '{"messages":[{"role":"user","content":"Czym dokładnie się zajmujecie?"}]}'
 ```
 
-`POST /chat` takes the full conversation (`messages: [{role: user|assistant, content}]`, last one from the user) and returns `{"reply": "..."}`. The service is stateless, so the bot resends the history each time. A Claude API or Qdrant failure gives HTTP 502. Questions the FAQ cannot answer (including questions about users) get a fixed Polish refusal.
+`POST /chat` takes the full conversation (`messages: [{role: user|assistant, content, lang?}]`, last one from the user) and returns `{"reply": "..."}`. The service is stateless, so the bot resends the history each time. A Claude API or Qdrant failure gives HTTP 502. Questions the FAQ cannot answer (including questions about users) get a fixed refusal in the language given by the last message's optional `lang` (`uk`, `en` or `pl`; default `en`).
 
 Model settings in `.env`: `CLAUDE_MODEL` (default `claude-haiku-5-5`) and `CLAUDE_EFFORT` (default `low`; allowed `low|medium|high|xhigh|max`, empty = the model's API default). An invalid value stops `ai-service` at startup; a level the chosen model does not support gives HTTP 502. If you switch to another model (e.g. Sonnet), set `CLAUDE_EFFORT` explicitly.
 
@@ -62,6 +62,12 @@ docker compose run --rm ai-service python -m scripts.seed_faq
 docker compose run --rm ai-service python -m scripts.seed_faq data/faq.sample.json
 ```
 
+To tune `FAQ_MIN_SCORE` after changing the FAQ, print the best-hit score of fixed in-topic and off-topic questions (en/uk/pl):
+
+```bash
+docker compose run --rm ai-service python -m scripts.measure_faq_score
+```
+
 To load your own file, place it in `ai-service/data/` and rebuild the image. Texts are embedded locally with `intfloat/multilingual-e5-large` (`passage:` prefix for indexing, `query:` for search).
 
 ## Resetting data
@@ -69,9 +75,7 @@ To load your own file, place it in `ai-service/data/` and rebuild the image. Tex
 Qdrant keeps its collection between restarts. To replace the FAQ data (old data is dropped), remove the volumes and seed again:
 
 ```bash
-docker compose down -v                      # drops mysql-data and qdrant-data
-docker compose up -d --build --wait
-docker compose run --rm ai-service python -m scripts.seed_faq data/faq.sample.json
+make rebuild   # down -v (drops mysql-data and qdrant-data), up --build, seed the sample FAQ
 ```
 
 `--build` is needed because `data/faq.sample.json` is baked into the image.

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Runs the ai-service tests before every commit. Installed by git-hook/setup.sh.
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+echo "pre-commit: starting vector-db..."
+docker compose --env-file .env -f docker/docker-compose.yml up -d --wait vector-db >/dev/null
+
+echo "pre-commit: running ai-service tests..."
+if ! docker compose --env-file .env -f docker/docker-compose.yml run --rm --no-deps \
+    -e CLAUDE_EFFORT= \
+    -v "$PWD/ai-service:/srv" -w /srv \
+    ai-service sh -c 'pip install -q -r requirements-dev.txt >/dev/null 2>&1 && python -m pytest -q'; then
+  echo "pre-commit: tests failed, commit aborted (bypass with --no-verify)" >&2
+  exit 1
+fi

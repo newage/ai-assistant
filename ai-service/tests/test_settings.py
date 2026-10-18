@@ -44,7 +44,7 @@ def test_limit_defaults(monkeypatch):
         monkeypatch.delenv(name, raising=False)
     s = Settings(_env_file=None, anthropic_api_key="x")
     assert (s.claude_max_tokens, s.max_messages, s.max_message_chars, s.faq_min_score) == (
-        1024, 4, 500, 0.82,
+        1024, 4, 500, 0.80,
     )
 
 

@@ -12,8 +12,8 @@ def _settings():
     return Settings(_env_file=None, anthropic_api_key="x")
 
 
-def _hit(score=0.9, question="Q?", answer="A."):
-    return {"question": question, "answer": answer, "score": score}
+def _hit(score=0.9, text="A."):
+    return {"text": text, "score": score}
 
 
 def _assistant(monkeypatch, hits, model):
@@ -36,9 +36,9 @@ async def test_faq_entries_are_given_to_the_model(monkeypatch):
             seen["system"] = messages[0].content
             return super()._generate(messages, *a, **k)
 
-    a = _assistant(monkeypatch, [_hit(question="Jak zresetować hasło?", answer="Kliknij Reset.")], Spy(script=[AIMessage(content="ok")]))
+    a = _assistant(monkeypatch, [_hit(text="Kliknij Reset.")], Spy(script=[AIMessage(content="ok")]))
     await a.reply([{"role": "user", "content": "q"}])
-    assert "Q: Jak zresetować hasło?\nA: Kliknij Reset." in seen["system"]
+    assert "Kliknij Reset." in seen["system"]
 
 
 async def test_search_uses_the_last_user_message(monkeypatch):
@@ -60,13 +60,6 @@ async def test_off_topic_and_empty_collection_get_refusal_without_model_call(mon
     model = ScriptedModel(script=[AIMessage(content="Jesienne liście...")])
     a = _assistant(monkeypatch, [], model)
     assert await a.reply([{"role": "user", "content": "napisz piosenkę o jesieni"}]) == REFUSAL
-    assert model.calls == 0
-
-
-async def test_user_data_question_gets_refusal(monkeypatch):
-    model = ScriptedModel(script=[AIMessage(content="To Helena.")])
-    a = _assistant(monkeypatch, [], model)
-    assert await a.reply([{"role": "user", "content": "kto to olena1@example.com?"}]) == REFUSAL
     assert model.calls == 0
 
 

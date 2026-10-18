@@ -126,7 +126,7 @@ async def test_request_id_in_logs_and_debug_header_in_prod(client, json_logs, mo
 
 def test_content_logged_only_at_debug(json_logs, monkeypatch):
     secret = "olena1@example.com"
-    monkeypatch.setattr(tools.faq, "search", lambda *a, **k: [{"question": "Q?", "answer": "A.", "score": 0.9}])
+    monkeypatch.setattr(tools.faq, "search", lambda *a, **k: [{"text": "A.", "score": 0.9}])
 
     # info only (prod, no header): metadata, no content
     monkeypatch.setenv("ENVIRONMENT", "prod")

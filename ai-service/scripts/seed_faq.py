@@ -1,7 +1,7 @@
 """Idempotent FAQ seeding: python -m scripts.seed_faq [path/to/faq.json]
 
 Creates the Qdrant collection if missing and upserts entries with stable IDs.
-Entries file: JSON list of {"key", "question", "answer"}. Without a path the
+Entries file: JSON list of {"id", "type", "project", "lang", "text", "questions"?}. Without a path the
 script only ensures the (empty) collection exists.
 """
 import json

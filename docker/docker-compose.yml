@@ -1,3 +1,5 @@
+name: ai-assistant
+
 x-logging: &logging
   driver: json-file
   options:
@@ -35,7 +37,9 @@ services:
       retries: 10
 
   ai-service:
-    build: ./ai-service
+    build:
+      context: ../ai-service
+      dockerfile: ../docker/Dockerfile
     restart: unless-stopped
     logging: *logging
     environment:
@@ -45,7 +49,7 @@ services:
       CLAUDE_MAX_TOKENS: ${CLAUDE_MAX_TOKENS:-1024}
       MAX_MESSAGES: ${MAX_MESSAGES:-4}
       MAX_MESSAGE_CHARS: ${MAX_MESSAGE_CHARS:-500}
-      FAQ_MIN_SCORE: ${FAQ_MIN_SCORE:-0.82}
+      FAQ_MIN_SCORE: ${FAQ_MIN_SCORE:-0.80}
       QDRANT_URL: http://vector-db:6333
       LOG_ID: ${LOG_ID:-dev}
       ENVIRONMENT: ${ENVIRONMENT:-local}

@@ -138,3 +138,24 @@ async def test_qdrant_failure_is_502_without_claude_call(client, monkeypatch):
     )
     assert r.status_code == 502 and "reply" not in r.json() and r.headers["x-request-id"] == "q502"
     assert model.calls == 0
+
+
+@pytest.mark.parametrize("lang,expected", [("uk", "Вибачте"), ("en", "Sorry"), ("pl", "Przepraszam"), (None, "Sorry")])
+async def test_refusal_follows_message_lang(client, monkeypatch, lang, expected):
+    from unittest.mock import MagicMock
+
+    from app import tools
+    from app.agent import Assistant
+    from app.settings import Settings
+    from tests.conftest import ScriptedModel
+
+    monkeypatch.setattr(tools.faq, "search", lambda *a, **k: [])
+    _use(Assistant(Settings(_env_file=None, anthropic_api_key="x"), model=ScriptedModel(script=[]), qdrant=MagicMock()))
+    msg = {"role": "user", "content": "Хто такий Вадим?", **({"lang": lang} if lang else {})}
+    r = await client.post("/chat", json={"messages": [msg]})
+    assert r.status_code == 200 and r.json()["reply"].startswith(expected)
+
+
+async def test_unknown_lang_is_422(client):
+    r = await client.post("/chat", json={"messages": [{"role": "user", "content": "hi", "lang": "de"}]})
+    assert r.status_code == 422

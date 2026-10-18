@@ -22,6 +22,7 @@ app = FastAPI(title="ai-service")
 class Message(BaseModel):
     role: Literal["user", "assistant"]
     content: str = Field(min_length=1, max_length=settings.max_message_chars)
+    lang: Literal["uk", "en", "pl"] | None = None  # language of the fixed refusal; default en
 
 
 class ChatRequest(BaseModel):
@@ -72,7 +73,7 @@ def health() -> dict[str, str]:
 async def chat(body: ChatRequest, request: Request) -> ChatResponse:
     if body.messages[-1].role != "user":
         raise HTTPException(status_code=422, detail="The last message must have role 'user'.")
-    messages = [m.model_dump() for m in body.messages]
+    messages = [m.model_dump(exclude_none=True) for m in body.messages]
     started = time.perf_counter()
     log.info("chat request", extra={"messages_count": len(messages)})
     log.debug("chat request content", extra={"messages": [truncate(m["content"]) for m in messages]})
