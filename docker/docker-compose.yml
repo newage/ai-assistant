@@ -7,24 +7,6 @@ x-logging: &logging
     max-file: "2"
 
 services:
-  mysql:
-    image: mysql:8.4
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-demo}
-      MYSQL_READONLY_USER: ${MYSQL_READONLY_USER:-readonly}
-      MYSQL_READONLY_PASSWORD: ${MYSQL_READONLY_PASSWORD:?set MYSQL_READONLY_PASSWORD in .env}
-    volumes:
-      - mysql-data:/var/lib/mysql
-    healthcheck:
-      # TCP ping: the temporary init server only listens on a socket, so this passes only when MySQL is really ready
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-      start_period: 20s
-
   vector-db:
     image: qdrant/qdrant:latest
     restart: unless-stopped
@@ -66,5 +48,4 @@ services:
       start_period: 20s
 
 volumes:
-  mysql-data:
   qdrant-data:

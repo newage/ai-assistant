@@ -8,11 +8,10 @@ A demo AI-assistant ecosystem assembled by `docker-compose.yml`. The chat bot is
 
 ```
 chat bot ──HTTP──▶ ai-service (FastAPI, Claude API) ──▶ vector-db (Qdrant)
-                                                     mysql (idle, kept for a future user-data API)
 ```
 
 - `ai-service/` — Python orchestrator. `POST /chat` takes `{messages:[{role,content,lang?}]}` (`lang` ∈ `uk|en|pl`, optional, default `en`) and returns `{reply}` (stateless, no streaming). There is no agent: every request searches the FAQ in Qdrant with the last user message, and only if at least one hit has score ≥ `FAQ_MIN_SCORE` makes one Claude call that answers from those hits. Otherwise (off-topic, greetings, questions about users) the reply is a fixed refusal in the `lang` of the last message (uk/en/pl; HTTP 200) and Claude is not called. A Claude API failure or an unavailable Qdrant becomes HTTP 502. Limits (env): `CLAUDE_MAX_TOKENS` (1024 per Claude call), `MAX_MESSAGES` (4) and `MAX_MESSAGE_CHARS` (500) — violating the last two is HTTP 422. The model and its effort level come from `CLAUDE_MODEL` (default `claude-haiku-5-5`) and `CLAUDE_EFFORT` (default `low`; empty = API default; invalid value fails at startup). Embeddings are local (`intfloat/multilingual-e5-large` via fastembed, baked into the image; `query:`/`passage:` prefixes are mandatory). Each FAQ entry is indexed as several points: its `text` (`passage:`) plus one point per item of its optional `questions` list (`query:`); search collapses them to the best point per entry.
-- `mysql` — the container stays in `docker-compose.yml` for a future user-data API; nothing uses it now and it has no schema or seed.
+- User data — a future user-data API will keep 1-2 tables in an embedded SQLite file inside `ai-service` (no separate container); nothing exists yet.
 - `openspec/` — specs and changes; `.agents/decisions/` holds the decision log.
 
 ## Logging

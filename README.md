@@ -4,8 +4,6 @@ Demo of an AI assistant: an external chat bot talks to `ai-service`, which answe
 
 ```
 chat bot ──HTTP──▶ ai-service ──▶ vector-db (Qdrant)
-
-mysql (idle, kept for the future user-data API)
 ```
 
 ## Technologies by stage
@@ -30,7 +28,7 @@ Cross-cutting:
 ## Quick start
 
 ```bash
-cp .env.example .env     # set ANTHROPIC_API_KEY and the MySQL passwords
+cp .env.example .env     # set ANTHROPIC_API_KEY
 make up                  # docker/docker-compose.yml, reads .env
 curl -s localhost:8000/chat -H 'Content-Type: application/json' \
   -d '{"messages":[{"role":"user","content":"Czym dokładnie się zajmujecie?"}]}'
@@ -75,14 +73,14 @@ To load your own file, place it in `ai-service/data/` and rebuild the image. Tex
 Qdrant keeps its collection between restarts. To replace the FAQ data (old data is dropped), remove the volumes and seed again:
 
 ```bash
-make rebuild   # down -v (drops mysql-data and qdrant-data), up --build, seed the sample FAQ
+make rebuild   # down -v (drops qdrant-data), up --build, seed the sample FAQ
 ```
 
 `--build` is needed because `data/faq.sample.json` is baked into the image.
 
 ## Demo caveat
 
-There is **no access control or rate limiting**; the FAQ is the only data source. Only `ai-service` publishes a host port. The `mysql` container is kept for a future user-data API and is not used yet.
+There is **no access control or rate limiting**; the FAQ is the only data source. Only `ai-service` publishes a host port. The future user-data API will use an embedded SQLite file, not a separate database container.
 
 ## Development
 
