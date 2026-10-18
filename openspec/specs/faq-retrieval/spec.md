@@ -14,7 +14,7 @@ The system SHALL embed text locally with `intfloat/multilingual-e5-large`, using
 - **THEN** its text is embedded with the `passage:` prefix into a 1024-dimension vector
 
 #### Scenario: Searching
-- **WHEN** the agent searches the FAQ
+- **WHEN** a chat request searches the FAQ
 - **THEN** the search text is embedded with the `query:` prefix
 
 ### Requirement: FAQ collection configuration
@@ -35,20 +35,20 @@ The seed script SHALL be safely re-runnable: it SHALL create the collection only
 - **WHEN** new FAQ entries are added and the seed script is run again
 - **THEN** the new entries become searchable without any change to the architecture
 
-### Requirement: FAQ search tool
-The system SHALL give the agent a `search_faq` tool that returns the most relevant FAQ entries for a text query.
+### Requirement: FAQ search step
+The system SHALL search the FAQ on every chat request, using the last user message as the query, and SHALL return the most relevant FAQ entries with their similarity scores.
 
 #### Scenario: Relevant entry exists
-- **WHEN** the agent calls `search_faq` with a question matching an indexed entry
-- **THEN** the tool returns that entry among the top results
+- **WHEN** the last user message matches an indexed entry
+- **THEN** the search returns that entry among the top results
 
 ### Requirement: Empty collection tolerance
 The system MUST keep answering requests when the FAQ collection is empty or has not been seeded.
 
 #### Scenario: Search on empty collection
-- **WHEN** `search_faq` runs and the collection is empty
-- **THEN** the tool returns no results and the chat request completes normally
+- **WHEN** the FAQ search runs and the collection is empty
+- **THEN** the search returns no results and the chat request completes normally with the fixed refusal
 
 #### Scenario: Collection missing
-- **WHEN** `search_faq` runs and the collection does not exist
-- **THEN** the tool returns no results and the chat request does not fail
+- **WHEN** the FAQ search runs and the collection does not exist
+- **THEN** the search returns no results and the chat request does not fail

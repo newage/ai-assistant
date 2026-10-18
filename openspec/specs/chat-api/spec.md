@@ -36,28 +36,6 @@ The system SHALL NOT store conversation state between requests and SHALL derive 
 - **WHEN** the service restarts between two requests
 - **THEN** the next request behaves identically as long as the bot resends the history
 
-### Requirement: LLM-driven tool selection
-The system SHALL let the LLM decide, per request, whether to call the FAQ search tool, the MCP user-data tools, both, or neither. A request for which no tool returns data is answered with the fixed refusal.
-
-#### Scenario: Greeting needs no tools
-- **WHEN** the user message is a greeting such as "hi"
-- **THEN** the system answers with the fixed refusal, without relying on any tool data
-
-#### Scenario: User data question
-- **WHEN** the user asks about the profile of a user identified by ID or email
-- **THEN** the agent calls an MCP tool and bases the reply on its result
-
-### Requirement: Tool errors are reported to the agent
-The system SHALL return tool failures (user not found, MCP server unavailable) to the agent as tool results so that the reply honestly explains the situation.
-
-#### Scenario: User not found
-- **WHEN** an MCP tool reports that no such user exists
-- **THEN** the system responds with HTTP 200 and a reply stating the user was not found
-
-#### Scenario: MCP server unavailable
-- **WHEN** the MCP server cannot be reached during a request
-- **THEN** the system responds with HTTP 200 and a reply that explains the data could not be retrieved
-
 ### Requirement: LLM provider failure
 The system SHALL respond with an HTTP 5xx status when the Claude API is unavailable.
 
@@ -79,3 +57,25 @@ The system SHALL respond with an HTTP 5xx status when the Claude API is unavaila
 #### Scenario: Error responses
 - **WHEN** a request fails with HTTP 422 or 502
 - **THEN** the response still carries the `X-Request-ID` header
+
+### Requirement: Direct FAQ answering
+The system SHALL answer every chat request from FAQ search results, without an agent or tool selection: it searches the FAQ with the last user message and, when at least one hit counts as data, asks the LLM once to answer from those hits in the language of the user's message.
+
+#### Scenario: FAQ question
+- **WHEN** the user asks a question for which the FAQ has a sufficiently similar entry
+- **THEN** the system responds with HTTP 200 and a reply based on that entry, produced by a single LLM call
+
+#### Scenario: Greeting
+- **WHEN** the user message is a greeting such as "hi"
+- **THEN** the system answers with the fixed refusal
+
+#### Scenario: Question about a user
+- **WHEN** the user asks about the profile of a user identified by ID or email
+- **THEN** the system answers with the fixed refusal, because no user data source exists
+
+### Requirement: Vector database failure
+The system SHALL respond with HTTP 502 when the vector database is unavailable, the same status as for an LLM provider failure.
+
+#### Scenario: Qdrant down
+- **WHEN** the FAQ search fails because Qdrant cannot be reached
+- **THEN** the system responds with HTTP 502, no `reply` is produced and the Claude API is not called
