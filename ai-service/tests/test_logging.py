@@ -7,15 +7,11 @@ from unittest.mock import MagicMock
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from langchain_core.messages import AIMessage
-from langchain_core.tools import StructuredTool
 
 from app import logging_setup, tools
-from app.agent import Assistant
 from app.logging_setup import ContextFilter, JsonFormatter
 from app.main import app
 from app.settings import Settings
-from tests.conftest import ScriptedModel
 
 REQUIRED = {"priority", "service", "short_message", "x-request-id", "extra", "timestamp", "log_id", "environment"}
 
@@ -56,9 +52,9 @@ def test_extra_fields_and_exception_go_to_extra():
         import sys
 
         record = logging.LogRecord("x", logging.ERROR, __file__, 1, "failed", None, sys.exc_info())
-    record.tool = "find_user_profile"
+    record.step = "faq_search"
     extra = json.loads(JsonFormatter().format(record))["extra"]
-    assert extra["tool"] == "find_user_profile" and "ValueError: boom" in extra["exception"]
+    assert extra["step"] == "faq_search" and "ValueError: boom" in extra["exception"]
 
 
 def test_uvicorn_log_config_loads_and_emits_json(capsys, monkeypatch):
@@ -128,53 +124,27 @@ async def test_request_id_in_logs_and_debug_header_in_prod(client, json_logs, mo
         del app.state.assistant
 
 
-async def test_content_logged_only_at_debug(json_logs, monkeypatch):
-    class NoMcp:
-        async def load(self):
-            return []
-
+def test_content_logged_only_at_debug(json_logs, monkeypatch):
     secret = "olena1@example.com"
-
-    async def find(user_id: str = "") -> str:
-        return '{"email":"olena1@example.com"}'
-
-    inner = StructuredTool.from_function(coroutine=find, name="find_user_profile", description="d")
-    guarded = tools._guard_mcp_tool(inner)
+    monkeypatch.setattr(tools.faq, "search", lambda *a, **k: [{"question": "Q?", "answer": "A.", "score": 0.9}])
 
     # info only (prod, no header): metadata, no content
     monkeypatch.setenv("ENVIRONMENT", "prod")
-    await guarded.ainvoke({"user_id": secret})
+    tools.search_faq(Settings(_env_file=None, anthropic_api_key="x"), MagicMock(), secret)
     out = json.dumps(json_logs())
-    assert "find_user_profile" in out and "duration_ms" in out and secret not in out
+    assert "faq_search" in out and "duration_ms" in out and secret not in out and "A." not in out
 
-    # debug: arguments and result are present
+    # debug: query and hits are present
     monkeypatch.setenv("ENVIRONMENT", "local")
-    await guarded.ainvoke({"user_id": secret})
+    tools.search_faq(Settings(_env_file=None, anthropic_api_key="x"), MagicMock(), secret)
     debug = [l for l in json_logs() if l["priority"] == "DEBUG"]
-    assert debug and secret in json.dumps(debug)
+    assert debug and secret in json.dumps(debug) and "A." in json.dumps(debug)
 
 
 def test_debug_content_is_truncated(json_logs):
-    tools._log_tool_call("t", "ok", 0.0, {"q": "a"}, "x" * 2000)
+    tools._log_step("s", "ok", 0.0, {"q": "a"}, "x" * 2000)
     debug = [l for l in json_logs() if l["priority"] == "DEBUG"][0]
     assert len(debug["extra"]["result"]) <= 501
-
-
-async def test_mcp_call_carries_request_headers(monkeypatch):
-    seen = {}
-
-    class FakeClient:
-        def __init__(self, config, **kwargs):
-            seen.update(config["users"]["headers"])
-
-        async def get_tools(self):
-            return []
-
-    monkeypatch.setattr(tools, "MultiServerMCPClient", FakeClient)
-    await tools.McpTools("http://mcp/mcp").load(request_id="abc123", debug=True)
-    assert seen == {"X-Request-ID": "abc123", "X-Debugging": "true"}
-    await tools.McpTools("http://mcp/mcp").load()
-    assert seen == {"X-Request-ID": "-", "X-Debugging": "false"}
 
 
 def test_quiet_libraries_never_log_debug(json_logs):

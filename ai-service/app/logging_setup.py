@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 SERVICE = "ai-service"
 CONTENT_LIMIT = 500
 # Libraries whose debug output is noise (or may carry request headers); they never log below INFO.
-QUIET_LOGGERS = ("httpcore", "httpx", "anthropic", "urllib3", "asyncio", "mcp")
+QUIET_LOGGERS = ("httpcore", "httpx", "anthropic", "urllib3", "asyncio")
 REQUEST_ID_RE = re.compile(r"[A-Za-z0-9._-]{1,64}")
 
 request_id_var: ContextVar[str] = ContextVar("request_id", default="-")

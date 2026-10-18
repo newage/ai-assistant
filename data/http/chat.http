@@ -2,6 +2,6 @@
 POST http://localhost:8000/chat
 Content-Type: application/json
 
-{"messages":[{"role":"user","content":"napisz dla mnie text"}]}
+{"messages":[{"role":"user","content":"Czym dokładnie się zajmujecie?"}]}
 
 ###

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Keeps the assistant inside its intended scope and budget: it answers only from FAQ and user-data tool results, and bounds the tokens and agent steps spent on one request.
+Keeps the assistant inside its intended scope and budget: it answers only from FAQ data, and bounds the tokens spent on one request.
 
 ## Requirements
 

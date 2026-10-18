@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines how `ai-service` and `mcp-server` emit structured JSON logs, how a single request is traced across both services, and how detailed (debug) logging is controlled.
+Defines how `ai-service` emits structured JSON logs, how a single request is traced by its id, and how detailed (debug) logging is controlled.
 
 ## Requirements
 

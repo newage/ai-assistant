@@ -1,109 +1,35 @@
-"""Agent tools. Failures are returned as text so the LLM can explain them honestly."""
+"""FAQ search step of the chat pipeline."""
 import logging
 import time
-from contextvars import ContextVar
 
-from langchain_core.tools import BaseTool, StructuredTool, ToolException, tool
-from langchain_mcp_adapters.client import MultiServerMCPClient
 from qdrant_client import QdrantClient
 
 from app import faq
-from app.logging_setup import debug_requested_var, request_id_var, truncate
+from app.logging_setup import truncate
 from app.settings import Settings
 
 log = logging.getLogger(__name__)
 
-NO_FAQ = "No relevant FAQ entries found."
-FAQ_UNAVAILABLE = "The FAQ search is temporarily unavailable."
-MCP_UNAVAILABLE = "The user data service is temporarily unavailable, so this information could not be retrieved."
+
+class FaqSearchError(Exception):
+    """The FAQ search could not be performed (vector database unavailable)."""
 
 
-class DataTracker:
-    """Per-request record of whether any tool returned real data (see `Assistant.reply`)."""
-
-    def __init__(self) -> None:
-        self.found = False
-
-
-data_tracker_var: ContextVar[DataTracker | None] = ContextVar("data_tracker", default=None)
-
-
-def mark_data() -> None:
-    tracker = data_tracker_var.get()
-    if tracker is not None:
-        tracker.found = True
-
-
-def _log_tool_call(name: str, status: str, started: float, args, result) -> None:
+def _log_step(step: str, status: str, started: float, args, result, hits: int | None = None) -> None:
     """Info: metadata only. Debug: arguments and result, truncated."""
-    log.info("tool call", extra={"tool": name, "status": status, "duration_ms": round((time.perf_counter() - started) * 1000, 1)})
-    log.debug("tool call content", extra={"tool": name, "arguments": truncate(args), "result": truncate(result)})
+    log.info("step", extra={"step": step, "status": status, "hits": hits, "duration_ms": round((time.perf_counter() - started) * 1000, 1)})
+    log.debug("step content", extra={"step": step, "arguments": truncate(args), "result": truncate(result)})
 
 
-def make_search_faq(settings: Settings, client: QdrantClient | None = None) -> BaseTool:
-    qdrant = client or QdrantClient(url=settings.qdrant_url)
-
-    @tool
-    def search_faq(query: str) -> str:
-        """Search the FAQ / knowledge base for answers to general product or support questions."""
-        started = time.perf_counter()
-        try:
-            hits = faq.search(qdrant, settings.faq_collection, query, settings.faq_top_k)
-        except Exception:
-            log.exception("search_faq failed")
-            _log_tool_call("search_faq", "error", started, {"query": query}, FAQ_UNAVAILABLE)
-            return FAQ_UNAVAILABLE
-        hits = [h for h in hits if h["score"] >= settings.faq_min_score]
-        if hits:
-            mark_data()
-        result = NO_FAQ if not hits else "\n\n".join(f"Q: {h['question']}\nA: {h['answer']}" for h in hits)
-        _log_tool_call("search_faq", "ok", started, {"query": query}, result)
-        return result
-
-    return search_faq
-
-
-def _guard_mcp_tool(t: BaseTool) -> BaseTool:
-    """Wrap an MCP tool so transport errors become a tool result instead of an exception."""
-
-    async def run(**kwargs):
-        started = time.perf_counter()
-        try:
-            result = await t.ainvoke(kwargs)
-        except ToolException as exc:  # the tool ran but reported an error, e.g. "User not found." - not data
-            _log_tool_call(t.name, "error", started, kwargs, str(exc))
-            return str(exc)
-        except Exception:
-            log.exception("MCP tool %s failed", t.name)
-            _log_tool_call(t.name, "error", started, kwargs, MCP_UNAVAILABLE)
-            return MCP_UNAVAILABLE
-        mark_data()
-        _log_tool_call(t.name, "ok", started, kwargs, result)
-        return result
-
-    return StructuredTool.from_function(
-        coroutine=run, name=t.name, description=t.description, args_schema=t.args_schema
-    )
-
-
-class McpTools:
-    """Loads MCP tools lazily so ai-service can start (and answer) while mcp-server is down."""
-
-    def __init__(self, url: str):
-        self._url = url
-
-    async def load(self, request_id: str | None = None, debug: bool | None = None) -> list[BaseTool]:
-        """Build a client for this request so its id and debug flag travel to mcp-server as headers."""
-        headers = {
-            "X-Request-ID": request_id or request_id_var.get(),
-            "X-Debugging": "true" if (debug_requested_var.get() if debug is None else debug) else "false",
-        }
-        client = MultiServerMCPClient(
-            {"users": {"url": self._url, "transport": "streamable_http", "headers": headers}},
-            handle_tool_errors=False,  # isError results raise, so the guard can tell "not found" from data
-        )
-        try:
-            return [_guard_mcp_tool(t) for t in await client.get_tools()]
-        except Exception:
-            log.exception("could not load MCP tools")
-            return []
+def search_faq(settings: Settings, client: QdrantClient, query: str) -> list[dict]:
+    """Return the FAQ hits that count as data (score not below `faq_min_score`); raise `FaqSearchError` on failure."""
+    started = time.perf_counter()
+    try:
+        hits = faq.search(client, settings.faq_collection, query, settings.faq_top_k)
+    except Exception as exc:
+        log.exception("faq search failed")
+        _log_step("faq_search", "error", started, {"query": query}, str(exc))
+        raise FaqSearchError("The FAQ search is unavailable.") from exc
+    hits = [h for h in hits if h["score"] >= settings.faq_min_score]
+    _log_step("faq_search", "ok", started, {"query": query}, hits, hits=len(hits))
+    return hits

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines how FAQ knowledge is stored in the vector database, seeded, and searched by the agent, including the state where no FAQ data exists yet.
+Defines how FAQ knowledge is stored in the vector database, seeded, and searched on every chat request, including the state where no FAQ data exists yet.
 
 ## Requirements
 

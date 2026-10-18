@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines the contract between the external chat bot and the assistant orchestrator, and how the agent decides to use its tools to answer a user.
+Defines the contract between the external chat bot and the assistant orchestrator, and how a chat request is answered from the FAQ.
 
 ## Requirements
 

@@ -100,18 +100,41 @@ async def test_request_id_on_error_responses(client):
 
 
 
-async def test_off_topic_request_gets_refusal_through_the_real_assistant(client):
+async def test_off_topic_request_gets_refusal_through_the_real_assistant(client, monkeypatch):
+    from unittest.mock import MagicMock
+
     from langchain_core.messages import AIMessage
 
+    from app import tools
     from app.agent import REFUSAL, Assistant
     from app.settings import Settings
     from tests.conftest import ScriptedModel
 
-    class NoMcp:
-        async def load(self):
-            return []
-
+    monkeypatch.setattr(tools.faq, "search", lambda *a, **k: [])
     model = ScriptedModel(script=[AIMessage(content="Jesienne liście...")])
-    _use(Assistant(Settings(_env_file=None, anthropic_api_key="x"), model=model, mcp=NoMcp()))
+    _use(Assistant(Settings(_env_file=None, anthropic_api_key="x"), model=model, qdrant=MagicMock()))
     r = await client.post("/chat", json={"messages": [{"role": "user", "content": "napisz piosenkę"}]})
-    assert r.status_code == 200 and r.json() == {"reply": REFUSAL}
+    assert r.status_code == 200 and r.json() == {"reply": REFUSAL} and model.calls == 0
+
+
+async def test_qdrant_failure_is_502_without_claude_call(client, monkeypatch):
+    from unittest.mock import MagicMock
+
+    from langchain_core.messages import AIMessage
+
+    from app import tools
+    from app.agent import Assistant
+    from app.settings import Settings
+    from tests.conftest import ScriptedModel
+
+    def boom(*a, **k):
+        raise ConnectionError("qdrant down")
+
+    monkeypatch.setattr(tools.faq, "search", boom)
+    model = ScriptedModel(script=[AIMessage(content="x")])
+    _use(Assistant(Settings(_env_file=None, anthropic_api_key="x"), model=model, qdrant=MagicMock()))
+    r = await client.post(
+        "/chat", json={"messages": [{"role": "user", "content": "q"}]}, headers={"X-Request-ID": "q502"}
+    )
+    assert r.status_code == 502 and "reply" not in r.json() and r.headers["x-request-id"] == "q502"
+    assert model.calls == 0

@@ -15,7 +15,6 @@ services:
       MYSQL_READONLY_PASSWORD: ${MYSQL_READONLY_PASSWORD:?set MYSQL_READONLY_PASSWORD in .env}
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./data/db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       # TCP ping: the temporary init server only listens on a socket, so this passes only when MySQL is really ready
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
@@ -23,26 +22,6 @@ services:
       timeout: 5s
       retries: 20
       start_period: 20s
-
-  mcp-server:
-    build: ./mcp-server
-    restart: unless-stopped
-    logging: *logging
-    environment:
-      DB_HOST: mysql
-      DB_NAME: ${MYSQL_DATABASE:-demo}
-      DB_USER: ${MYSQL_READONLY_USER:-readonly}
-      DB_PASSWORD: ${MYSQL_READONLY_PASSWORD}
-      LOG_ID: ${LOG_ID:-dev}
-      ENVIRONMENT: ${ENVIRONMENT:-local}
-    depends_on:
-      mysql:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9501/health"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
 
   vector-db:
     image: qdrant/qdrant:latest
@@ -64,20 +43,16 @@ services:
       CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-haiku-5-5}
       CLAUDE_EFFORT: ${CLAUDE_EFFORT-low}
       CLAUDE_MAX_TOKENS: ${CLAUDE_MAX_TOKENS:-1024}
-      AGENT_MAX_STEPS: ${AGENT_MAX_STEPS:-4}
       MAX_MESSAGES: ${MAX_MESSAGES:-4}
       MAX_MESSAGE_CHARS: ${MAX_MESSAGE_CHARS:-500}
       FAQ_MIN_SCORE: ${FAQ_MIN_SCORE:-0.82}
       QDRANT_URL: http://vector-db:6333
-      MCP_URL: http://mcp-server:9501/mcp
       LOG_ID: ${LOG_ID:-dev}
       ENVIRONMENT: ${ENVIRONMENT:-local}
     ports:
       - "${AI_SERVICE_PORT:-8000}:8000"
     depends_on:
       vector-db:
-        condition: service_healthy
-      mcp-server:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health', timeout=3)"]

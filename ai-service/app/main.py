@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from app.agent import Assistant
 from app.logging_setup import debug_requested_var, request_id_var, truncate, valid_request_id
 from app.settings import get_settings
+from app.tools import FaqSearchError
 
 log = logging.getLogger("ai-service")
 access_log = logging.getLogger("ai-service.access")
@@ -77,6 +78,8 @@ async def chat(body: ChatRequest, request: Request) -> ChatResponse:
     log.debug("chat request content", extra={"messages": [truncate(m["content"]) for m in messages]})
     try:
         reply = await get_assistant(request).reply(messages)
+    except FaqSearchError as exc:
+        raise HTTPException(status_code=502, detail="The FAQ search is unavailable.") from exc
     except APIError as exc:
         log.exception("Claude API failure")
         raise HTTPException(status_code=502, detail="The language model is unavailable.") from exc

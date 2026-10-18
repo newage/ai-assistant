@@ -1,10 +1,11 @@
 # AI Assistant Demo Ecosystem
 
-Demo of an AI assistant: an external chat bot talks to `ai-service`, whose Claude-powered agent can search an FAQ (Qdrant RAG) and look up demo users via an MCP server backed by MySQL.
+Demo of an AI assistant: an external chat bot talks to `ai-service`, which answers questions from an FAQ (Qdrant RAG) with a single Claude call.
 
 ```
 chat bot ──HTTP──▶ ai-service ──▶ vector-db (Qdrant)
-                       └─MCP/HTTP─▶ mcp-server (PHP + Swoole) ──▶ mysql
+
+mysql (idle, kept for the future user-data API)
 ```
 
 ## Technologies by stage
@@ -14,29 +15,28 @@ Following one chat request through the system:
 | Stage | Component | Technologies |
 |---|---|---|
 | 1. Request in | chat bot → `ai-service` | External client, plain HTTP/JSON (`POST /chat`), optional `X-Request-ID` / `X-Debugging` headers |
-| 2. Orchestration | `ai-service` | Python, FastAPI, LangChain agent; the LLM decides which tools to call |
-| 3. Reasoning | Claude API | Anthropic Claude (`CLAUDE_MODEL`, default Haiku 5.5, with `CLAUDE_EFFORT`) |
-| 4a. FAQ search (RAG) | `search_faq` → `vector-db` | Local embeddings (`intfloat/multilingual-e5-large` via fastembed, baked into the image), Qdrant vector database |
-| 4b. User data | MCP client → `mcp-server` → `mysql` | MCP over HTTP (JSON-RPC at `POST /mcp`), PHP 8 + Swoole, MySQL with a `SELECT`-only account, fake seed data from `data/db/init/` |
-| 5. Response out | `ai-service` → chat bot | `{"reply": "..."}`; Claude API failure gives HTTP 502, tool failures are passed to the LLM as text |
+| 2. Orchestration | `ai-service` | Python, FastAPI; a fixed pipeline: FAQ search, then one Claude call (no agent) |
+| 3. FAQ search (RAG) | `ai-service` → `vector-db` | Local embeddings (`intfloat/multilingual-e5-large` via fastembed, baked into the image), Qdrant vector database |
+| 4. Reasoning | Claude API | Anthropic Claude (`CLAUDE_MODEL`, default Haiku 5.5, with `CLAUDE_EFFORT`) |
+| 5. Response out | `ai-service` → chat bot | `{"reply": "..."}`; a Claude API or Qdrant failure gives HTTP 502; with no relevant FAQ entry the reply is a fixed refusal and Claude is not called |
 
 Cross-cutting:
 
 - **Packaging and runtime:** Docker and Docker Compose (the whole stack, one command).
-- **Logging and tracing:** one JSON object per line on stdout, Docker `json-file` rotation, `X-Request-ID` forwarded from `ai-service` to `mcp-server`.
-- **Tests:** pytest (`ai-service`), PHPUnit (`mcp-server`).
+- **Logging and tracing:** one JSON object per line on stdout, Docker `json-file` rotation, `X-Request-ID` and `X-Debugging` request headers.
+- **Tests:** pytest (`ai-service`).
 - **Specs and decisions:** OpenSpec (`openspec/`) and the decision log in `.agents/decisions/`.
 
 ## Quick start
 
 ```bash
-cp .env.example .env     # set ANTHROPIC_API_KEY and the DB passwords
+cp .env.example .env     # set ANTHROPIC_API_KEY and the MySQL passwords
 docker compose up -d --build --wait
 curl -s localhost:8000/chat -H 'Content-Type: application/json' \
-  -d '{"messages":[{"role":"user","content":"Show profile olena1@example.com"}]}'
+  -d '{"messages":[{"role":"user","content":"Czym dokładnie się zajmujecie?"}]}'
 ```
 
-`POST /chat` takes the full conversation (`messages: [{role: user|assistant, content}]`, last one from the user) and returns `{"reply": "..."}`. The service is stateless, so the bot resends the history each time. A Claude API failure gives HTTP 502.
+`POST /chat` takes the full conversation (`messages: [{role: user|assistant, content}]`, last one from the user) and returns `{"reply": "..."}`. The service is stateless, so the bot resends the history each time. A Claude API or Qdrant failure gives HTTP 502. Questions the FAQ cannot answer (including questions about users) get a fixed Polish refusal.
 
 Model settings in `.env`: `CLAUDE_MODEL` (default `claude-haiku-5-5`) and `CLAUDE_EFFORT` (default `low`; allowed `low|medium|high|xhigh|max`, empty = the model's API default). An invalid value stops `ai-service` at startup; a level the chosen model does not support gives HTTP 502. If you switch to another model (e.g. Sonnet), set `CLAUDE_EFFORT` explicitly.
 
@@ -44,7 +44,7 @@ The first image build downloads the ~2.2 GB embedding model; later builds and st
 
 ## FAQ data
 
-The Qdrant collection `faq` (1024 dims, cosine) starts empty. Chat works without it; `search_faq` simply returns no results.
+The Qdrant collection `faq` (1024 dims, cosine) starts empty. Chat works without it; every question then gets the refusal.
 
 Entries file format (JSON list; `key` must be unique and stable — it determines the point ID):
 
@@ -66,11 +66,11 @@ To load your own file, place it in `ai-service/data/` and rebuild the image. Tex
 
 ## Resetting data
 
-MySQL runs `data/db/init/*.sql` only on the first start with an empty volume, and Qdrant keeps its collection between restarts. To replace all data with new seeds (old data is dropped), remove both volumes and seed again:
+Qdrant keeps its collection between restarts. To replace the FAQ data (old data is dropped), remove the volumes and seed again:
 
 ```bash
 docker compose down -v                      # drops mysql-data and qdrant-data
-docker compose up -d --build --wait         # MySQL re-runs data/db/init/*.sql
+docker compose up -d --build --wait
 docker compose run --rm ai-service python -m scripts.seed_faq data/faq.sample.json
 ```
 
@@ -78,7 +78,7 @@ docker compose run --rm ai-service python -m scripts.seed_faq data/faq.sample.js
 
 ## Demo caveat
 
-There is **no access control**: the agent can show data of any user by ID or email. This is acceptable only because the data is fake; production needs authorization. Only `ai-service` publishes a host port.
+There is **no access control or rate limiting**; the FAQ is the only data source. Only `ai-service` publishes a host port. The `mysql` container is kept for a future user-data API and is not used yet.
 
 ## Development
 
