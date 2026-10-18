@@ -12,7 +12,7 @@
       "Where is Vadym based?",
       "What does Vadym specialize in?",
       "What technologies does Vadym know?",
-      "Хто такий Вадим Леонтьєв?",
+      "Хто такий Вадим Леонт'єв?",
       "Скільки років досвіду має Вадим?",
       "Kim jest Vadym Leontiev?"
     ]
@@ -640,7 +640,9 @@
       "Does Vadym speak Polish?",
       "Can Vadym work in a Polish-speaking team?",
       "Якими мовами розмовляє Вадим?",
-      "Jakimi językami mówi Vadym?"
+      "Jakimi językami mówi Vadym?",
+      "Czy mówi Vadym po Polsku?",
+      "Czy może Vadym pracować w polskim zespole?"
     ]
   }
 ]

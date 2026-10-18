@@ -22,16 +22,13 @@ FAQ entries:
 # Returned instead of calling the model when no FAQ entry counts as data (off-topic, greetings, user-data questions).
 REFUSALS = {
     "pl": (
-        "Przepraszam, nie mogę pomóc w tej sprawie. Odpowiadam na pytania dotyczące naszej usługi (FAQ) "
-        "oraz na pytania o dane użytkowników. Zadaj proszę pytanie z tego zakresu."
+        "Przepraszam, nie mogę pomóc w tej sprawie. Nie mam informacji na ten temat."
     ),
     "en": (
-        "Sorry, I can't help with that. I answer questions about our service (FAQ) "
-        "and questions about user data. Please ask a question within that scope."
+        "Sorry, I can't help with that. I don't have information about this."
     ),
     "uk": (
-        "Вибачте, я не можу допомогти з цим питанням. Я відповідаю на запитання про нашу послугу (FAQ) "
-        "та на запитання про дані користувачів. Будь ласка, поставте запитання з цієї теми."
+        "Вибачте, я не можу допомогти з цим питанням. У мене немає інформації про це."
     ),
 }
 DEFAULT_LANG = "en"

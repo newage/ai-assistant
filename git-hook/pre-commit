@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 # Runs the ai-service tests before every commit. Installed by git-hook/setup.sh.
+# The stack (vector-db) must already be up (`make up`); the hook does not start containers.
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
-
-echo "pre-commit: starting vector-db..."
-docker compose --env-file .env -f docker/docker-compose.yml up -d --wait vector-db >/dev/null
 
 echo "pre-commit: running ai-service tests..."
 if ! docker compose --env-file .env -f docker/docker-compose.yml run --rm --no-deps \
